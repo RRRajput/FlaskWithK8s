@@ -6,12 +6,13 @@ Created on Sun Feb  7 21:13:12 2021
 """
 
 import sqlalchemy as db
+from datetime import datetime
 
 engine = db.create_engine('sqlite:///adex.db')
 connection = engine.connect()
 meta = db.MetaData()
 
-customers = db.Table('customers', \
+customer = db.Table('customer', \
                      meta, \
                      db.Column('id', db.Integer(), primary_key= True, nullable=False), \
                      db.Column('name', db.String(255), nullable=False), \
@@ -25,18 +26,6 @@ ip_blacklist = db.Table('ip_blacklist',\
 ua_blacklist = db.Table('ua_blacklist',\
                         meta, \
                         db.Column('ua', db.String(255), primary_key=True, nullable=False))
-
-# CREATE TABLE `hourly_stats` (
-#   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-#   `customer_id` int(11) unsigned NOT NULL,
-#   `time` timestamp NOT NULL,
-#   `request_count` bigint(20) unsigned NOT NULL DEFAULT '0',
-#   `invalid_count` bigint(20) unsigned NOT NULL DEFAULT '0',
-#   PRIMARY KEY (`id`),
-#   UNIQUE KEY `unique_customer_time` (`customer_id`,`time`),
-#   KEY `customer_idx` (`customer_id`),
-#   CONSTRAINT `hourly_stats_customer_id` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-# );
     
 hourly_stats = db.Table('hourly_stats',\
                         meta,\
@@ -49,3 +38,27 @@ hourly_stats = db.Table('hourly_stats',\
                         db.ForeignKeyConstraint(['customer_id'],['customers.id'],\
                                                 name='hourly_stats_customer_id',\
                                                 ondelete='CASCADE', onupdate='RESTRICT'))
+
+##### check if customer present
+query = db.select([customer]).where(customer.columns.id == 1)
+ResultProxy = connection.execute(query)
+Results = ResultProxy.fetchall()
+print(Results)
+
+##### check if blacklist IP present
+query = db.select([ip_blacklist]).where(ip_blacklist.columns.ip == 0)
+ResultProxy = connection.execute(query)
+Results = ResultProxy.fetchall()
+print(Results)
+
+##### check if blacklist ua agent present
+query = db.select([ua_blacklist]).where(ua_blacklist.columns.ua == "A6-Indexer")
+ResultProxy = connection.execute(query)
+Results = ResultProxy.fetchall()
+
+##### Insert record
+query = (db.insert(hourly_stats).values(\
+                                        customer_id=3,\
+                                        time = datetime.utcnow())
+         )
+ResultProxy = connection.execute(query)
