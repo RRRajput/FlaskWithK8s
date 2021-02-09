@@ -6,7 +6,7 @@ Created on Sun Feb  7 21:13:12 2021
 """
 
 import sqlalchemy as db
-from datetime import datetime
+from datetime import datetime, timedelta
 
 engine = db.create_engine('sqlite:///adex.db')
 connection = engine.connect()
@@ -56,9 +56,35 @@ query = db.select([ua_blacklist]).where(ua_blacklist.columns.ua == "A6-Indexer")
 ResultProxy = connection.execute(query)
 Results = ResultProxy.fetchall()
 
-##### Insert record
+## check if record exists:
+query = db.select([hourly_stats]).where(\
+                                hourly_stats.columns.customer_id==3 and\
+                                hourly_stats.columns.time==time_now)
+ResultProxy = connection.execute(query)
+Results = ResultProxy.fetchall()
+print(Results)
+
+#### Insert record
 query = (db.insert(hourly_stats).values(\
                                         customer_id=3,\
-                                        time = datetime.utcnow())
-         )
+                                        time = datetime.utcnow().replace(minute=0, second=0, microsecond=0))
+          )
 ResultProxy = connection.execute(query)
+
+#### update Record
+time_now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+customer_time = (3,datetime.utcnow().replace(minute=0, second=0, microsecond=0))
+query = (db.update(hourly_stats).\
+             where(hourly_stats.columns.customer_id == 3 and hourly_stats.columns.time == time_now).\
+                 values(request_count= hourly_stats.columns.request_count+1))
+ResultProxy = connection.execute(query)
+
+#### select for data
+time_now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+time_tomorrow = time_now + timedelta(days=1)
+query = (db.select([hourly_stats]).\
+             where(hourly_stats.columns.customer_id == 3 and\
+                   (hourly_stats.columns.time>=time_now and hourly_stats.columns.time < time_tomorrow)))
+ResultProxy = connection.execute(query)
+Results = ResultProxy.fetchall()
+print(Results)
