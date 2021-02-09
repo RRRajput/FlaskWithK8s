@@ -1,90 +1,117 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Feb  7 21:13:12 2021
+Created on Tue Feb  9 20:06:45 2021
 
 @author: Rehan Rajput
 """
 
 import sqlalchemy as db
 from datetime import datetime, timedelta
+from sqlalchemy.sql import func
 
-engine = db.create_engine('sqlite:///adex.db')
-connection = engine.connect()
-meta = db.MetaData()
+from DatabaseAdapter import IDatabaseAdapter
 
-customer = db.Table('customer', \
-                     meta, \
-                     db.Column('id', db.Integer(), primary_key= True, nullable=False), \
-                     db.Column('name', db.String(255), nullable=False), \
-                     db.Column('active', db.Boolean(), nullable=False, default=1))
-
-
-ip_blacklist = db.Table('ip_blacklist',\
-                        meta, \
-                        db.Column('ip', db.Integer(), primary_key=True, nullable=False))
-
-ua_blacklist = db.Table('ua_blacklist',\
-                        meta, \
-                        db.Column('ua', db.String(255), primary_key=True, nullable=False))
+class SqliteAdapter(IDatabaseAdapter):
     
-hourly_stats = db.Table('hourly_stats',\
-                        meta,\
-                        db.Column('id', db.Integer(), primary_key=True, nullable = False),\
-                        db.Column('customer_id', db.Integer(), nullable = False, unique=True),\
-                        db.Column('time', db.DateTime(), nullable = False),\
-                        db.Column('request_count', db.Integer(), nullable = False, default = 0),\
-                        db.Column('invalid_count', db.Integer(), nullable = False, default = 0),\
-                        db.UniqueConstraint('customer_id','time', name='unique_customer_time'),\
-                        db.ForeignKeyConstraint(['customer_id'],['customers.id'],\
-                                                name='hourly_stats_customer_id',\
-                                                ondelete='CASCADE', onupdate='RESTRICT'))
+    def __init__(self, path = 'sqlite:///adex.db'):
+        self.engine = db.create_engine(path)
+        self.connection = self.engine.connect()
+        self.meta = db.MetaData()
+        self.loadTables()
+        
+    def loadTables(self):
+        self.customer = db.Table('customer', \
+                             self.meta, \
+                             db.Column('id', db.Integer(), primary_key= True, nullable=False), \
+                             db.Column('name', db.String(255), nullable=False), \
+                             db.Column('active', db.Boolean(), nullable=False, default=1))
+        
+        
+        self.ip_blacklist = db.Table('ip_blacklist',\
+                                self.meta, \
+                                db.Column('ip', db.Integer(), primary_key=True, nullable=False))
+        
+        self.ua_blacklist = db.Table('ua_blacklist',\
+                                self.meta, \
+                                db.Column('ua', db.String(255), primary_key=True, nullable=False))
+            
+        self.hourly_stats = db.Table('hourly_stats',\
+                                self.meta,\
+                                db.Column('id', db.Integer(), primary_key=True, nullable = False),\
+                                db.Column('customer_id', db.Integer(), nullable = False, unique=True),\
+                                db.Column('time', db.DateTime(), nullable = False),\
+                                db.Column('request_count', db.Integer(), nullable = False, default = 0),\
+                                db.Column('invalid_count', db.Integer(), nullable = False, default = 0),\
+                                db.UniqueConstraint('customer_id','time', name='unique_customer_time'),\
+                                db.ForeignKeyConstraint(['customer_id'],['customers.id'],\
+                                                        name='hourly_stats_customer_id',\
+                                                        ondelete='CASCADE', onupdate='RESTRICT'))
 
-##### check if customer present
-query = db.select([customer]).where(customer.columns.id == 1)
-ResultProxy = connection.execute(query)
-Results = ResultProxy.fetchall()
-print(Results)
-
-##### check if blacklist IP present
-query = db.select([ip_blacklist]).where(ip_blacklist.columns.ip == 0)
-ResultProxy = connection.execute(query)
-Results = ResultProxy.fetchall()
-print(Results)
-
-##### check if blacklist ua agent present
-query = db.select([ua_blacklist]).where(ua_blacklist.columns.ua == "A6-Indexer")
-ResultProxy = connection.execute(query)
-Results = ResultProxy.fetchall()
-
-## check if record exists:
-query = db.select([hourly_stats]).where(\
-                                hourly_stats.columns.customer_id==3 and\
-                                hourly_stats.columns.time==time_now)
-ResultProxy = connection.execute(query)
-Results = ResultProxy.fetchall()
-print(Results)
-
-#### Insert record
-query = (db.insert(hourly_stats).values(\
-                                        customer_id=3,\
-                                        time = datetime.utcnow().replace(minute=0, second=0, microsecond=0))
-          )
-ResultProxy = connection.execute(query)
-
-#### update Record
-time_now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
-customer_time = (3,datetime.utcnow().replace(minute=0, second=0, microsecond=0))
-query = (db.update(hourly_stats).\
-             where(hourly_stats.columns.customer_id == 3 and hourly_stats.columns.time == time_now).\
-                 values(request_count= hourly_stats.columns.request_count+1))
-ResultProxy = connection.execute(query)
-
-#### select for data
-time_now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
-time_tomorrow = time_now + timedelta(days=1)
-query = (db.select([hourly_stats]).\
-             where(hourly_stats.columns.customer_id == 3 and\
-                   (hourly_stats.columns.time>=time_now and hourly_stats.columns.time < time_tomorrow)))
-ResultProxy = connection.execute(query)
-Results = ResultProxy.fetchall()
-print(Results)
+    def isCustomerPresent(self, customer_id):
+        query = db.select([self.customer]).\
+                    where(self.customer.columns.id == customer_id)
+        ResultProxy = self.connection.execute(query)
+        return len(ResultProxy.fetchall()) > 0
+    
+    def isIPBlacklisted(self, ip):
+        query = db.select([self.ip_blacklist]).\
+                    where(self.ip_blacklist.columns.ip == ip)
+        ResultProxy = self.connection.execute(query)
+        return len(ResultProxy.fetchall()) > 0
+    
+    def isUserAgentBlacklisted(self, userAgent):
+        query = db.select([self.ua_blacklist]).\
+                    where(self.ua_blacklist.columns.ua == userAgent)
+        ResultProxy = self.connection.execute(query)
+        return len(ResultProxy.fetchall()) > 0
+    
+    def insertValidHourlyStat(self, customer_id):
+        now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+        if existsHourlyStat(customer_id, now):
+            query = getUpdateQuery(customer_id, now)
+            query = query.values(request_count = self.hourly_stats.columns.request_count+1)
+        else:
+            query = getInsertQuery(customer_id, now)
+        self.connection.execute(query)
+    
+    def insertInvalidHourlyStat(self, customer_id):
+        now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+        if existsHourlyStat(customer_id, now):
+            query = getUpdateQuery(customer_id, now)
+            query = query.values(invalid_count = self.hourly_stats.columns.invalid_count+1)
+        else:
+            query = getInsertQuery(customer_id, now, valid=False)
+        self.connection.execute(query)
+    
+    def generateStatistics(self, customer_id, day):
+        day_plus_one = day + timedelta(days=1)
+        query = (db.select([self.hourly_stats, func.sum(self.hourly_stats.columns.request_count + self.hourly_stats.columns.invalid_count).label('Total Requests')]).\
+                     where(self.hourly_stats.columns.customer_id == customer_id and\
+                           (self.hourly_stats.columns.time>=day and self.hourly_stats.columns.time < day_plus_one)))
+        ResultProxy = self.connection.execute(query)
+        Results = ResultProxy.fetchall()
+        return [dict(r) for r in Results]
+    
+    def existsHourlyStat(self, customer_id, now):
+        query = db.select([self.hourly_stats]).\
+                    where(\
+                          self.hourly_stats.columns.customer_id == customer_id and\
+                          self.hourly_stats.columns.time == now)
+        ResultProxy = self.connection.execute(query)
+        return len(ResultProxy.fetchall()) > 0
+    
+    def getUpdateQuery(self, customer_id, now):
+        query = db.update(self.hourly_stats).\
+                     where(self.hourly_stats.columns.customer_id == customer_id \
+                           and self.hourly_stats.columns.time == now)
+        return query
+    
+    def getInsertQuery(self, customerID, now, valid = True):
+        requestCount = 1 if valid else 0
+        invalidCount = 1 if not valid else 0
+        query = db.insert(self.hourly_stats).values(\
+                                        customer_id=customerID,\
+                                        time = now,\
+                                        request_count = requestCount,\
+                                        invalid_count = invalidCount)
+        return query
