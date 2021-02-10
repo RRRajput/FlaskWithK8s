@@ -46,12 +46,15 @@ class SqliteAdapter(IDatabaseAdapter):
                                 db.ForeignKeyConstraint(['customer_id'],['customers.id'],\
                                                         name='hourly_stats_customer_id',\
                                                         ondelete='CASCADE', onupdate='RESTRICT'))
-
-    def isCustomerPresent(self, customer_id):
+    
+    def isCustomerPresentAndActive(self, customer_id):
         query = db.select([self.customer]).\
                     where(self.customer.columns.id == customer_id)
         ResultProxy = self.connection.execute(query)
-        return len(ResultProxy.fetchall()) > 0
+        Result = ResultProxy.fetchall()
+        isPresent = len(Result) > 0
+        isActive = isPresent and Result[0][-1]
+        return (isPresent,isActive)
     
     def isIPBlacklisted(self, ip):
         query = db.select([self.ip_blacklist]).\
@@ -67,20 +70,20 @@ class SqliteAdapter(IDatabaseAdapter):
     
     def insertValidHourlyStat(self, customer_id):
         now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
-        if existsHourlyStat(customer_id, now):
-            query = getUpdateQuery(customer_id, now)
+        if self.existsHourlyStat(customer_id, now):
+            query = self.getUpdateQuery(customer_id, now)
             query = query.values(request_count = self.hourly_stats.columns.request_count+1)
         else:
-            query = getInsertQuery(customer_id, now)
+            query = self.getInsertQuery(customer_id, now)
         self.connection.execute(query)
     
     def insertInvalidHourlyStat(self, customer_id):
         now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
-        if existsHourlyStat(customer_id, now):
-            query = getUpdateQuery(customer_id, now)
+        if self.existsHourlyStat(customer_id, now):
+            query = self.getUpdateQuery(customer_id, now)
             query = query.values(invalid_count = self.hourly_stats.columns.invalid_count+1)
         else:
-            query = getInsertQuery(customer_id, now, valid=False)
+            query = self.getInsertQuery(customer_id, now, valid=False)
         self.connection.execute(query)
     
     def generateStatistics(self, customer_id, day):

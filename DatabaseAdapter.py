@@ -22,6 +22,10 @@ class IDatabaseAdapter(ABC):
         pass
     
     @abstractmethod
+    def isCustomerActiveAndActive(self):
+        pass
+    
+    @abstractmethod
     def isIPBlacklisted(self):
         pass
     

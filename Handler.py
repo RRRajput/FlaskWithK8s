@@ -97,8 +97,7 @@ class RequestCountHandler(AbstractHandler):
         
     def handle(self, inputData):
         customerID = inputData["customerID"]
-        now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
-        database.insertValidHourlyStat(customerID, now)
+        database.insertValidHourlyStat(customerID)
         return self._success_handler.handle(inputData)
     
 class InvalidCountHandler(AbstractHandler):
@@ -107,8 +106,7 @@ class InvalidCountHandler(AbstractHandler):
         super().__init__(self)
         
     def handle(self, customerID, message):
-        now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
-        database.insertValidHourlyStat(customerID, now)
+        database.insertValidHourlyStat(customerID)
         return "{0}\nInvalid Request received by customer ID {1}".format(message, customerID)
     
 class ValidRequestHandler(AbstractHandler):
