@@ -5,7 +5,8 @@ Created on Tue Feb  9 20:06:45 2021
 @author: Rehan Rajput
 """
 
-import sqlalchemy as db, and_, or_
+import sqlalchemy as db
+from sqlalchemy import and_, or_
 from datetime import datetime, timedelta
 from sqlalchemy.sql import func
 
