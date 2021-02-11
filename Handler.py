@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from DatabaseAdapter import IDatabaseAdapter
 import json
 import ipaddress
-
+from datetime import datetime
 class AbstractHandler(ABC):
     """
     The Handler interface declares a method for building the chain of handlers.
@@ -112,6 +112,12 @@ class InvalidCountHandler(AbstractHandler):
         now = datetime.fromtimestamp(inputData["timestamp"])
         self.__database.insertValidHourlyStat(customerID)
         return "{0}\nInvalid Request received by customer ID {1}".format(message, customerID)
+
+class StatisticsHandler(AbstractHandler):
+    def handle(self, inputData, message):
+        customerID = inputData["customerID"]
+        now = inputData["timestamp"]
+        return str(self.__database.generateStatistics(customerID, now))
     
 class ValidRequestHandler(AbstractHandler):
     def handle(self, inputData):
