@@ -5,7 +5,7 @@ Created on Tue Feb  9 20:06:45 2021
 @author: Rehan Rajput
 """
 
-import sqlalchemy as db
+import sqlalchemy as db, and_, or_
 from datetime import datetime, timedelta
 from sqlalchemy.sql import func
 
@@ -89,8 +89,9 @@ class SqliteAdapter(IDatabaseAdapter):
     def generateStatistics(self, customer_id, day):
         day_plus_one = day + timedelta(days=1)
         query = (db.select([self.hourly_stats, func.sum(self.hourly_stats.columns.request_count + self.hourly_stats.columns.invalid_count).label('Total Requests')]).\
-                     where(self.hourly_stats.columns.customer_id == customer_id and\
-                           (self.hourly_stats.columns.time>=day and self.hourly_stats.columns.time < day_plus_one)))
+                     where(and_(self.hourly_stats.columns.customer_id == customer_id,\
+                            and_(func.date(self.hourly_stats.columns.time)>=day,
+                             and_(func.date(self.hourly_stats.columns.time) < day_plus_one)))))
         ResultProxy = self.connection.execute(query)
         Results = ResultProxy.fetchall()
         return [dict(r) for r in Results]
@@ -98,15 +99,15 @@ class SqliteAdapter(IDatabaseAdapter):
     def existsHourlyStat(self, customer_id, now):
         query = db.select([self.hourly_stats]).\
                     where(\
-                          self.hourly_stats.columns.customer_id == customer_id and\
-                          self.hourly_stats.columns.time == now)
+                          and_(self.hourly_stats.columns.customer_id == customer_id,\
+                          func.date(self.hourly_stats.columns.time) == now))
         ResultProxy = self.connection.execute(query)
         return len(ResultProxy.fetchall()) > 0
     
     def getUpdateQuery(self, customer_id, now):
         query = db.update(self.hourly_stats).\
-                     where(self.hourly_stats.columns.customer_id == customer_id \
-                           and self.hourly_stats.columns.time == now)
+                     where(and_(self.hourly_stats.columns.customer_id == customer_id, \
+                           func.date(self.hourly_stats.columns.time) == now))
         return query
     
     def getInsertQuery(self, customerID, now, valid = True):
