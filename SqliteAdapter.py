@@ -89,24 +89,24 @@ class SqliteAdapter(IDatabaseAdapter):
         day_plus_one = day + timedelta(days=1)
         query = (db.select([self.hourly_stats, func.sum(self.hourly_stats.columns.request_count + self.hourly_stats.columns.invalid_count).label('Total Requests')]).\
                      where(and_(self.hourly_stats.columns.customer_id == customer_id,\
-                            and_(func.date(self.hourly_stats.columns.time)>=day,
-                             and_(func.date(self.hourly_stats.columns.time) < day_plus_one)))))
+                            and_(self.hourly_stats.columns.time>=day,
+                             and_(self.hourly_stats.columns.time < day_plus_one)))))
         ResultProxy = self.connection.execute(query)
         Results = ResultProxy.fetchall()
         return [dict(r) for r in Results]
     
     def existsHourlyStat(self, customer_id, now):
-        query = db.select([self.hourly_stats]).\
+        query = self.hourly_stats.select().\
                     where(\
                           and_(self.hourly_stats.columns.customer_id == customer_id,\
-                          func.date(self.hourly_stats.columns.time) == now))
+                          self.hourly_stats.columns.time == now))
         ResultProxy = self.connection.execute(query)
         return len(ResultProxy.fetchall()) > 0
     
     def getUpdateQuery(self, customer_id, now):
         query = db.update(self.hourly_stats).\
                      where(and_(self.hourly_stats.columns.customer_id == customer_id, \
-                           func.date(self.hourly_stats.columns.time) == now))
+                           self.hourly_stats.columns.time == now))
         return query
     
     def getInsertQuery(self, customerID, now, valid = True):

@@ -6,10 +6,10 @@ Created on Wed Feb 10 18:04:38 2021
 """
 
 from abc import ABC, abstractmethod
-from DatabaseAdapter import IDatabaseAdapter
 import json
 import ipaddress
 from datetime import datetime
+
 class AbstractHandler(ABC):
     """
     The Handler interface declares a method for building the chain of handlers.
@@ -71,11 +71,11 @@ class IPBlacklistHandler(AbstractHandler):
         super().__init__()
         
     def handle(self, inputData):
-        customerID = inputData["customerID"]
-        ip = int(ipaddress.ip_address(inputData["remoteIP"]))
+        ip_string = inputData["remoteIP"]
+        ip = int(ipaddress.ip_address(ip_string))
         if not self.__database.isIPBlacklisted(ip):
             return self._success_handler.handle(inputData)
-        error_message = "ERROR: IP {0} is blacklisted".format(ip)
+        error_message = "ERROR: IP {0} is blacklisted".format(ip_string)
         return self._failure_handler.handle(inputData, error_message)
     
 class UserAgentBlacklistHandler(AbstractHandler):
@@ -84,7 +84,6 @@ class UserAgentBlacklistHandler(AbstractHandler):
         super().__init__()
         
     def handle(self, inputData):
-        customerID = inputData["customerID"]
         userAgent = inputData["userID"]
         if not self.__database.isUserAgentBlacklisted(userAgent):
             return self._success_handler.handle(inputData)
@@ -110,7 +109,7 @@ class InvalidCountHandler(AbstractHandler):
     def handle(self, inputData, message):
         customerID = inputData["customerID"]
         now = datetime.fromtimestamp(inputData["timestamp"])
-        self.__database.insertValidHourlyStat(customerID)
+        self.__database.insertInvalidHourlyStat(customerID, now)
         return "{0}\nInvalid Request received by customer ID {1}".format(message, customerID)
 
 class StatisticsHandler(AbstractHandler):
