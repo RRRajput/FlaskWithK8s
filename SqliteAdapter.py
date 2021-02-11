@@ -69,8 +69,7 @@ class SqliteAdapter(IDatabaseAdapter):
         ResultProxy = self.connection.execute(query)
         return len(ResultProxy.fetchall()) > 0
     
-    def insertValidHourlyStat(self, customer_id):
-        now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+    def insertValidHourlyStat(self, customer_id, now):
         if self.existsHourlyStat(customer_id, now):
             query = self.getUpdateQuery(customer_id, now)
             query = query.values(request_count = self.hourly_stats.columns.request_count+1)
@@ -78,8 +77,7 @@ class SqliteAdapter(IDatabaseAdapter):
             query = self.getInsertQuery(customer_id, now)
         self.connection.execute(query)
     
-    def insertInvalidHourlyStat(self, customer_id):
-        now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+    def insertInvalidHourlyStat(self, customer_id, now):
         if self.existsHourlyStat(customer_id, now):
             query = self.getUpdateQuery(customer_id, now)
             query = query.values(invalid_count = self.hourly_stats.columns.invalid_count+1)

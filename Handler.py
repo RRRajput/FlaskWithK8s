@@ -59,9 +59,9 @@ class CustomerPresentAndActiveHandler(AbstractHandler):
         isPresent, isActive = self.__database.isCustomerPresentAndActive(customerID)
         if isPresent and isActive:
             return self._success_handler.handle(inputData)
-        elif isPresent:
+        elif isPresent and self._failure_handler is not None:
             error_message = "ERROR: Customer ID {0} not active in database".format(customerID)
-            return self._failure_handler.handle(customerID, error_message)
+            return self._failure_handler.handle(inputData, error_message)
         return "Customer ID {0} is not in database".format(customerID)
 
 class IPBlacklistHandler(AbstractHandler):
@@ -75,7 +75,7 @@ class IPBlacklistHandler(AbstractHandler):
         if not self.__database.isIPBlacklisted(ip):
             return self._success_handler.handle(inputData)
         error_message = "ERROR: IP {0} is blacklisted".format(ip)
-        return self._failure_handler.handle(customerID, error_message)
+        return self._failure_handler.handle(inputData, error_message)
     
 class UserAgentBlacklistHandler(AbstractHandler):
     def __init__(self, database):
@@ -88,7 +88,7 @@ class UserAgentBlacklistHandler(AbstractHandler):
         if not self.__database.isUserAgentBlacklisted(userAgent):
             return self._success_handler.handle(inputData)
         error_message = "ERROR: User Agent {0} is blacklisted".format(userAgent)
-        return self._failure_handler.handle(customerID, error_message)
+        return self._failure_handler.handle(inputData, error_message)
 
 class RequestCountHandler(AbstractHandler):
     def __init__(self, database):
@@ -97,7 +97,8 @@ class RequestCountHandler(AbstractHandler):
         
     def handle(self, inputData):
         customerID = inputData["customerID"]
-        self.__database.insertValidHourlyStat(customerID)
+        now = datetime.fromtimestamp(inputData["timestamp"])
+        self.__database.insertValidHourlyStat(customerID, now)
         return self._success_handler.handle(inputData)
     
 class InvalidCountHandler(AbstractHandler):
@@ -105,7 +106,9 @@ class InvalidCountHandler(AbstractHandler):
         self.__database = database
         super().__init__()
         
-    def handle(self, customerID, message):
+    def handle(self, inputData, message):
+        customerID = inputData["customerID"]
+        now = datetime.fromtimestamp(inputData["timestamp"])
         self.__database.insertValidHourlyStat(customerID)
         return "{0}\nInvalid Request received by customer ID {1}".format(message, customerID)
     
