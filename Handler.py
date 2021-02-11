@@ -60,11 +60,23 @@ class CustomerPresentAndActiveHandler(AbstractHandler):
         isPresent, isActive = self.__database.isCustomerPresentAndActive(customerID)
         if isPresent and isActive:
             return self._success_handler.handle(inputData)
-        elif isPresent and self._failure_handler is not None:
+        elif isPresent:
             error_message = "ERROR: Customer ID {0} not active in database".format(customerID)
             return self._failure_handler.handle(inputData, error_message)
         return "Customer ID {0} is not in database".format(customerID)
 
+class CustomerPresentHandler(AbstractHandler):
+    def __init__(self, database):
+        self.__database = database
+        super().__init__()
+        
+    def handle(self, inputData):
+        customerID = inputData["customerID"]
+        isPresent, isActive = self.__database.isCustomerPresentAndActive(customerID)
+        if isPresent:
+            return self._success_handler.handle(inputData)
+        return "Customer ID {0} is not in database".format(customerID)
+    
 class IPBlacklistHandler(AbstractHandler):
     def __init__(self, database):
         self.__database = database
@@ -113,9 +125,13 @@ class InvalidCountHandler(AbstractHandler):
         return "{0}\nInvalid Request received by customer ID {1}".format(message, customerID)
 
 class StatisticsHandler(AbstractHandler):
-    def handle(self, inputData, message):
+    def __init__(self, database):
+        self.__database = database
+        super().__init__()
+        
+    def handle(self, inputData):
         customerID = inputData["customerID"]
-        now = inputData["timestamp"]
+        now = inputData["date"]
         return str(self.__database.generateStatistics(customerID, now))
     
 class ValidRequestHandler(AbstractHandler):
