@@ -42,7 +42,7 @@ class MalformedJSONHandler(AbstractHandler):
 class JSONFieldsHandler(AbstractHandler):
     def __init__(self, keys):
         self.__keys = set(keys)
-        super().__init__(self)
+        super().__init__()
         
     def handle(self, inputData):
         if set(inputData.keys()) == self.__keys:
@@ -52,11 +52,11 @@ class JSONFieldsHandler(AbstractHandler):
 class CustomerPresentAndActiveHandler(AbstractHandler):
     def __init__(self, database):
         self.__database = database
-        super().__init__(self)
+        super().__init__()
         
     def handle(self, inputData):
         customerID = inputData["customerID"]
-        isPresent, isActive = database.isCustomerPresentAndActive(customerID)
+        isPresent, isActive = self.__database.isCustomerPresentAndActive(customerID)
         if isPresent and isActive:
             return self._success_handler.handle(inputData)
         elif isPresent:
@@ -67,12 +67,12 @@ class CustomerPresentAndActiveHandler(AbstractHandler):
 class IPBlacklistHandler(AbstractHandler):
     def __init__(self, database):
         self.__database = database
-        super().__init__(self)
+        super().__init__()
         
     def handle(self, inputData):
         customerID = inputData["customerID"]
         ip = inputData["remoteIP"]
-        if not database.isIPBlacklisted(ip):
+        if not self.__database.isIPBlacklisted(ip):
             return self._success_handler.handle(inputData)
         error_message = "ERROR: IP {0} is blacklisted".format(ip)
         return self._failure_handler.handle(customerID, error_message)
@@ -80,12 +80,12 @@ class IPBlacklistHandler(AbstractHandler):
 class UserAgentBlacklistHandler(AbstractHandler):
     def __init__(self, database):
         self.__database = database
-        super().__init__(self)
+        super().__init__()
         
     def handle(self, inputData):
         customerID = inputData["customerID"]
         userAgent = inputData["userID"]
-        if not database.isUserAgentBlacklisted(userAgent):
+        if not self.__database.isUserAgentBlacklisted(userAgent):
             return self._success_handler.handle(inputData)
         error_message = "ERROR: User Agent {0} is blacklisted".format(userAgent)
         return self._failure_handler.handle(customerID, error_message)
@@ -93,20 +93,20 @@ class UserAgentBlacklistHandler(AbstractHandler):
 class RequestCountHandler(AbstractHandler):
     def __init__(self, database):
         self.__database = database
-        super().__init__(self)
+        super().__init__()
         
     def handle(self, inputData):
         customerID = inputData["customerID"]
-        database.insertValidHourlyStat(customerID)
+        self.__database.insertValidHourlyStat(customerID)
         return self._success_handler.handle(inputData)
     
 class InvalidCountHandler(AbstractHandler):
     def __init__(self, database):
         self.__database = database
-        super().__init__(self)
+        super().__init__()
         
     def handle(self, customerID, message):
-        database.insertValidHourlyStat(customerID)
+        self.__database.insertValidHourlyStat(customerID)
         return "{0}\nInvalid Request received by customer ID {1}".format(message, customerID)
     
 class ValidRequestHandler(AbstractHandler):
