@@ -8,6 +8,7 @@ Created on Wed Feb 10 18:04:38 2021
 from abc import ABC, abstractmethod
 from DatabaseAdapter import IDatabaseAdapter
 import json
+import ipaddress
 
 class AbstractHandler(ABC):
     """
@@ -71,7 +72,7 @@ class IPBlacklistHandler(AbstractHandler):
         
     def handle(self, inputData):
         customerID = inputData["customerID"]
-        ip = inputData["remoteIP"]
+        ip = int(ipaddress.ip_address(inputData["remoteIP"]))
         if not self.__database.isIPBlacklisted(ip):
             return self._success_handler.handle(inputData)
         error_message = "ERROR: IP {0} is blacklisted".format(ip)
