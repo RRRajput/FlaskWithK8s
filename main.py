@@ -26,9 +26,27 @@ getStat = StatisticsHandler(adapter)
 jsonfields_getStat.set_next(\
     customerPresent_getStat).set_next(\
     getStat)
-                                              
+                                      
+## chain of responsibility for get commands
+malformed_request = MalformedJSONHandler()
+requestKeys = ["customerID","tagID","userID","remoteIP","timestamp"]
+jsonfields_request = JSONFieldsHandler(requestKeys)
+customerPandA_request = CustomerPresentAndActiveHandler(adapter)
+ipblacklist_request = IPBlacklistHandler(adapter)
+uablacklist_request = UserAgentBlacklistHandler(adapter)
+validCounter_request = RequestCountHandler(adapter)
+invalidCounter_request = InvalidCountHandler(adapter)
+valid_request = ValidRequestHandler()
+
+malformed_request.set_next(jsonfields_request).\
+    set_next(customerPandA_request).\
+    set_next(ipblacklist_request,invalidCounter_request).\
+    set_next(uablacklist_request,invalidCounter_request).\
+    set_next(validCounter_request,invalidCounter_request).\
+    set_next(valid_request)
+
 @app.route('/user/<customer_id>', methods=['GET'])
-def query_records(customer_id=None):
+def getStatistics(customer_id=None):
     if customer_id is None:
         return "No customer ID given"
     try:
@@ -43,8 +61,7 @@ def query_records(customer_id=None):
 
 
 @app.route('/', methods=['POST'])
-def update_record():
-    record = json.loads(request.data)
-    return jsonify(record)
+def postRequest():
+    return malformed_request.handle(request.data)
 
 app.run(debug=True, use_reloader=False)
