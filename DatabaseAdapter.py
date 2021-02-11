@@ -18,11 +18,7 @@ class IDatabaseAdapter(ABC):
         pass
     
     @abstractmethod
-    def isCustomerPresent(self):
-        pass
-    
-    @abstractmethod
-    def isCustomerActiveAndActive(self):
+    def isCustomerPresentAndActive(self):
         pass
     
     @abstractmethod
