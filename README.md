@@ -5,7 +5,7 @@ The following libraries are needed to run this code:
 - sqlalchemy
 - flash
 
-To run the code, just run the main. 
+To run the code, just run the main.py
 
 GET requests can be made directly from the browser.
 POST requests can be made using PostMan.
