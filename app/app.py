@@ -5,17 +5,29 @@ Created on Thu Feb 11 20:58:53 2021
 @author: Rehan Rajput
 """
 
-import json
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from datetime import datetime
-from Handler import *
-from SqliteAdapter import SqliteAdapter
+import os
+from Handler import (
+    JSONFieldsHandler,
+    CustomerPresentHandler,
+    StatisticsHandler,
+    CustomerPresentAndActiveHandler,
+    IPBlacklistHandler,
+    UserAgentBlacklistHandler,
+    RequestCountHandler,
+    InvalidCountHandler,
+    ValidRequestHandler,
+    MalformedJSONHandler
+)
+from SQLDatabase import SQLDatabase
 
 ## defining the flask part
 app = Flask(__name__)
 
 ## initializing the database adapter
-adapter = SqliteAdapter('sqlite:///adex.db?check_same_thread=False')
+database_address = os.environ['DATABASE_ADDRESS']
+adapter = SQLDatabase(database_address)
 
 ## chain of responsbility for getting statistics from the get method
 getStatKeys = ["customerID","date"]
@@ -64,4 +76,5 @@ def getStatistics(customer_id=None):
 def postRequest():
     return malformed_request.handle(request.data)
 
-app.run(debug=True, use_reloader=False)
+if __name__=="__main__":
+    app.run()

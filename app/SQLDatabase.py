@@ -10,11 +10,10 @@ from sqlalchemy import and_, or_
 from datetime import datetime, timedelta
 from sqlalchemy.sql import func
 
-from DatabaseAdapter import IDatabaseAdapter
 
-class SqliteAdapter(IDatabaseAdapter):
+class SQLDatabase(object):
     
-    def __init__(self, path = 'sqlite:///adex.db'):
+    def __init__(self, path):
         self.engine = db.create_engine(path)
         self.connection = self.engine.connect()
         self.meta = db.MetaData()
@@ -87,10 +86,16 @@ class SqliteAdapter(IDatabaseAdapter):
     
     def generateStatistics(self, customer_id, day):
         day_plus_one = day + timedelta(days=1)
-        query = (db.select([self.hourly_stats, func.sum(self.hourly_stats.columns.request_count + self.hourly_stats.columns.invalid_count).label('Total Requests')]).\
-                     where(and_(self.hourly_stats.columns.customer_id == customer_id,\
+        query = (db.select([\
+                             func.extract('hour', self.hourly_stats.columns.time).label('hours'),\
+                             func.sum(self.hourly_stats.columns.request_count).label('request_count_sum'),\
+                             func.sum(self.hourly_stats.columns.invalid_count).label('invalid_count_sum')\
+                        ])\
+                    .where(and_(self.hourly_stats.columns.customer_id == customer_id,\
                             and_(self.hourly_stats.columns.time>=day,
-                             and_(self.hourly_stats.columns.time < day_plus_one)))))
+                             and_(self.hourly_stats.columns.time < day_plus_one))))\
+                    .group_by('hours')\
+                    .order_by('hours') )
         ResultProxy = self.connection.execute(query)
         Results = ResultProxy.fetchall()
         return [dict(r) for r in Results]

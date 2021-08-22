@@ -28,7 +28,7 @@ class AbstractHandler(ABC):
         return successHandler
 
     @abstractmethod
-    def handle(self):
+    def handle(self, request, success=True):
         pass
 
 class MalformedJSONHandler(AbstractHandler):
