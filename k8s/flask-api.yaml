@@ -1,0 +1,40 @@
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "restapi"
+  labels:
+    app: "restapi"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: "restapi"
+  template:
+    metadata:
+      labels:
+        app: "restapi"
+    spec:
+      containers:
+      - name: "restapi"
+        image: <<INSERT IMAGE LOCATION HERE>>
+        env:
+        - name: DATABASE_ADDRESS
+          value: "postgresql://postgres:adextest@postgres:5432/testdb"
+
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "restapi-service"
+  labels:
+    app: "restapi"
+spec:
+  ports:
+  - protocol: "TCP"
+    port: 80
+    targetPort: 5000
+  selector:
+    app: "restapi"
+  type: "LoadBalancer"
+  loadBalancerIP: ""
+

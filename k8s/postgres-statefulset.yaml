@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-statefulset
+  labels:
+    app: postgres
+spec:
+  serviceName: postgres-service
+  replicas: 3
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:latest
+        envFrom:
+        - configMapRef:
+            name: postgres-config
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+          - mountPath: /work/pgdata/
+            name: postgredb
+            subPath: postgres
+      volumes:
+        - name: postgredb
+          azureDisk:
+            kind: Managed
+            diskURI: <<INSERT Resource ID of the Azure Disk here>>
+            diskName: postgres-disk
+            cachingMode: None # Caching mode must be 'None'
