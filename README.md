@@ -1,4 +1,9 @@
-# AdexTest
+# Flask with K8s
+
+This project was done as part of interview assessment for a company. 
+The problem statement can be found in the file `problem_statement.txt`.
+
+
 
 The following libraries are needed to run this code:
 
