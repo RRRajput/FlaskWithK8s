@@ -5,13 +5,6 @@
 This project was done as part of interview assessment for a company. 
 The problem statement can be found in the file `problem_statement.txt`.
 
-## Acknowledgements
-
-The k8s deployment could be improved by:
-- Putting the postgres authentication as a secret rather than as a config file.
-- The Azure Disk resource URI could be put as a secret.
-
-
 The following libraries are needed to run this code:
 
 - sqlalchemy
@@ -62,3 +55,9 @@ https://refactoring.guru/design-patterns/chain-of-responsibility/python/example
 https://pythonbasics.org/flask-rest-api/
 
 Google and Stack overflow
+
+# Acknowledgements
+
+The k8s deployment could be improved by:
+- Putting the postgres authentication as a secret rather than as a config file.
+- The Azure Disk resource URI could be put as a secret.
