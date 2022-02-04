@@ -27,9 +27,13 @@ I tried to name the variables and methods to the best of my abilities, their int
 
 Moreover, I tried to write the code in such a way that comments are not required (for the most part). However, if there's some part of code that you don't understand, let me know.
 
-For generating statistics, currently we only support one date format (i.e. dd-mm-yyyy). I'm not very happy with this, but I think that this is not something that is going to be very important for the evaluation of this test. Let me know if I'm wrong. 
+For generating statistics, currently we only support one date format (i.e. dd-mm-yyyy).
 
 This is the first time I've used flask so the code for flask might not be very good. If it is helpful, you can also have a look at the commit history to see what kind of problems I faced and how did I tackle them.
+
+The k8s deployment could be improved by:
+- Putting the postgres authentication as a secret rather than as a config file.
+- The Azure Disk resource URI could be put as a secret.
 
 # Architecture
 
@@ -37,11 +41,6 @@ This is the first time I've used flask so the code for flask might not be very g
 As explained above, we only required the GET and the POST requests. 
 GET requests are used for generating statistics.
 POST requests are used by customers to input data
-
-# Adapter Design Pattern for Database Management
-In this implementation we have used Sqlite for our database management. I've used the adapter Design Pattern to make sure that if someone else wants to use a different Database technology, they can do so by just implementing the interface IDatabaseAdapter. 
-
-I'm not very happy with the method called isCustomerPresentAndActive because it returns a tuple of booleans and that's not a very intuitive return value. 
 
 # Chain of Responsibility Design Pattern to check the incoming requests
 I've used chain of responsibility to perform different checks during the evaluation of input data. This allows us to flexibly add new checks if we need them at a later point.
@@ -52,12 +51,7 @@ You can see the chain of commands for both both user requests and statistics gen
 
 # References
 https://refactoring.guru/design-patterns/chain-of-responsibility/python/example
+
 https://pythonbasics.org/flask-rest-api/
 
 Google and Stack overflow
-
-# Acknowledgements
-
-The k8s deployment could be improved by:
-- Putting the postgres authentication as a secret rather than as a config file.
-- The Azure Disk resource URI could be put as a secret.
